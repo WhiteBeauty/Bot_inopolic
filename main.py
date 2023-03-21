@@ -105,25 +105,6 @@ if __name__ == '__main__':
 
 
 
-'''app = fastapi.FastAPI(docs=None, redoc_url=None)
-bot = telebot.TeleBot(TOKEN)
-
-@app.post(f'/{TOKEN}/')
-def process_webhook(update: dict):
-
-    if update:
-        update = telebot.types.Update.de_json(update)
-        bot.process_new_updates([update])
-    else:
-        return
-
-@dp.message_handler(lambda message: True, content_types=['text'])
-async def echo_message (message):
-
-     await message.reply(message.text)
-
-
-executor.start_polling(dp, skip_updates=True, on_startup=one_startup)'''
 
 
 
