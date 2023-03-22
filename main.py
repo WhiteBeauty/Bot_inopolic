@@ -1,13 +1,9 @@
 import logging
-
-import fastapi as fastapi
 from aiogram import types, Bot
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-import telebot
-
+import sqlite3 as sq
 
 from aiogram.utils.executor import start_webhook
 
@@ -35,7 +31,27 @@ WEBAPP_PORT = 8000
 logging.basicConfig(level=logging.INFO)
 
 
+@dp.message_handler(text='база')
+async def user_db(message: types.Message):
+    con = sq.connect('users.db')
+    cur = con.cursor()
+    user = cur.execute('SELECT * FROM users')
+    user = user.fetchall()
+    if user:
+        print("YES")
+    else:
+        print("error, you are not user")
 
+def create_table():
+    con = sq.connect('users.db')
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS users (
+             userid INT PRIMARY KEY,
+             username TEXT)
+         """)
+    con.commit()
+    cur.close()
+    con.close()
 
 
 @dp.message_handler(commands=['start'])
@@ -60,9 +76,6 @@ async def get_text_messages(message):
     else:
         await message.reply(message.text)
         await bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help")
-
-
-
 
 
 
@@ -102,6 +115,7 @@ if __name__ == '__main__':
 
 
 
+# my github: https://github.com/WhiteBeauty/Bot_inopolic
 
 
 
