@@ -5,10 +5,10 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import sqlite3 as sq
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils import executor
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text
+from aiogram.dispatcher.filters import Text, CommandHelp
 from aiogram.utils.executor import start_webhook
 
 from settins import TOKEN
@@ -23,17 +23,14 @@ dp.middleware.setup(LoggingMiddleware())
 async def one_startup(_):
     print('Бот вышел в онлайн')
 
+banned_users = set()
 
 
-'''WEBHOOK_HOST = 'https://63d2-95-153-179-202.eu.ngrok.io'
-WEBHOOK_PATH = ''
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
-
-WEBAPP_HOST = '127.0.0.1'
-WEBAPP_PORT = 8000
-
-logging.basicConfig(level=logging.INFO)'''
-
+HELP_COMMAND = [
+   '/start - команда для запуска бота',
+    'отправь фото, я повторю',
+    'Это телеграм бот, он умеет повторять️не только текст, а также заносить в бан) ',
+]
 
 class FSMAdmin(StatesGroup):
     photo = State()
@@ -83,6 +80,43 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 
+@dp.message_handler(user_id=banned_users)
+async def handle_banned(msg: types.Message):
+    print(f"{msg.from_user.full_name} пишет!")
+    return True
+
+
+
+
+
+@dp.message_handler(commands=['start'])
+async def handle_all(msg: types.Message):
+    await msg.reply(f"Добрый день, {msg.from_user.full_name} Чем я могу тебе помочь?")
+
+
+
+
+@dp.message_handler(commands=['ban'], user_id=5119595270)
+async def handle_ban_command(msg: types.Message):
+    try:
+        abuser_id = int(msg.get_args())
+    except (ValueError, TypeError):
+        return await msg.reply("Укажи ID пользователя, когда пишешь бан.")
+
+    banned_users.add(abuser_id)
+    await msg.reply(f"Пользователь {abuser_id} заблокирован.")
+
+
+
+b1 = KeyboardButton('/start')
+b2 = KeyboardButton('/help')
+
+kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+
+kb.row(b1, b2)
+
+
+
 
 @dp.message_handler(content_types = ['photo'])
 async def echo_photo_bot(message):
@@ -90,19 +124,23 @@ async def echo_photo_bot(message):
 
 
 
+@dp.message_handler(commands='delete')
+async def delete_item(message: types.Message):
+    read = await sql_read2()
+    for ret in read:
+        await bot.send_photo(message.from_user.id, ret[0], f'{ret[1]}\n {ret[2]}\n {ret[-1]}')
+        await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
+                                add(InlineKeyboardButton(f'Удалить {ret[1]}', callback_data=f'del {ret[1]}')))
 
 
 
 
 
-@dp.message_handler(commands=['start'])
-async def command_start(message: types.Message):
-    await bot.send_message(message.from_user.id, 'Привет, рад знакомству! Чем я могу тебе помочь?')
-    await message.delete()
+@dp.message_handler(CommandHelp())
+async def cmd_help(message: types.Message):
+    sep = "\n"
+    await message.answer(f'Вот мои команды\n{sep.join(HELP_COMMAND)}', reply_markup=kb)
 
-@dp.message_handler(commands=['help'])
-async def command_help(message: types.Message):
-    await bot.send_message(message.from_user.id, 'Это телеграм бот, он умеет повторять')
 
 
 @dp.message_handler(commands=['copy'])
@@ -119,6 +157,12 @@ async def get_text_messages(message):
         await bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help")
 
 executor.start_polling(dp, skip_updates=True, on_startup=one_startup)
+
+
+# my github: https://github.com/WhiteBeauty/Bot_inopolic
+
+
+
 
 '''async def on_startup(dp):
    await bot.set_webhook(WEBHOOK_URL)
@@ -140,7 +184,14 @@ async def on_shutdown(dp):
    logging.warning('Bye!')
 '''
 
+'''WEBHOOK_HOST = 'https://63d2-95-153-179-202.eu.ngrok.io'
+WEBHOOK_PATH = ''
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
+WEBAPP_HOST = '127.0.0.1'
+WEBAPP_PORT = 8000
+
+logging.basicConfig(level=logging.INFO)'''
 
 
 '''if __name__ == '__main__':
@@ -156,10 +207,26 @@ async def on_shutdown(dp):
 
 
 
-# my github: https://github.com/WhiteBeauty/Bot_inopolic
+
+'''app = fastapi.FastAPI(docs=None, redoc_url=None)
+bot = telebot.TeleBot(TOKEN)
+
+@app.post(f'/{TOKEN}/')
+def process_webhook(update: dict):
+
+    if update:
+        update = telebot.types.Update.de_json(update)
+        bot.process_new_updates([update])
+    else:
+        return
+
+@dp.message_handler(lambda message: True, content_types=['text'])
+async def echo_message (message):
+
+     await message.reply(message.text)
 
 
-
+executor.start_polling(dp, skip_updates=True, on_startup=one_startup)'''
 
 
 
